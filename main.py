@@ -12,14 +12,14 @@ from UI.ui_components import get_header, ticker_dropdown, update_button, \
                         
 from data.data_handeler import get_data, get_cumm_ret_data, get_prophet_df, get_all_data
 
-from models.models import load_volume_model, load_prophet_model, forecast, train_models_for_all_tickers
+from models.models import load_volume_model, load_prophet_model, forecast, train_models_for_all_tickers, load_models_for_all_tickers
 from utils.utils import get_financial_metrics
 
 
 tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META"]
 
-prophet_models, volume_models = train_models_for_all_tickers(tickers)
 data = get_all_data(tickers)
+prophet_models, volume_models = load_models_for_all_tickers(data, tickers)
 
 
 initial_ticker = "AAPL"

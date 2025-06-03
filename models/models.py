@@ -53,12 +53,38 @@ def train_models_for_all_tickers(tickers):
     return prophet_models, volume_models
         
 def load_volume_model(ticker):
-    return load_model(f"volume_model_{ticker}.pkl")
+    if os.path.exists(f"volume_model_{ticker}.pkl"):
+        return load_model(f"volume_model_{ticker}.pkl")
+    return None
 
 def load_prophet_model(ticker):
-    return load_model(f"prophet_model_{ticker}.pkl")
+    if os.path.exists(f"prophet_model_{ticker}.pkl"):
+        return load_model(f"prophet_model_{ticker}.pkl")
+    return None
 
 def forecast(model):
     future = model.make_future_dataframe(periods=60)
     forecast_data = model.predict(future)
     return forecast_data
+
+
+def load_models_for_all_tickers(df, tickers):
+    prophet_models = {}
+    volume_models = {}  
+    for ticker in tickers:
+        print(f"loading models for {ticker}...")
+        volume_model = load_volume_model(ticker)  
+        if volume_model:
+            volume_models[ticker] = volume_model 
+        else:
+            
+             volume_models[ticker] =  train_volume_model(df[ticker][0], ticker)
+        
+        prophet_model = load_prophet_model(ticker)
+        if prophet_model:
+            prophet_models[ticker] = prophet_model
+        else:
+            prophet_df = get_prophet_df(df[ticker][0], ticker)
+            prophet_models[ticker] = train_prophet_model(prophet_df, ticker)
+            
+    return prophet_models, volume_models
