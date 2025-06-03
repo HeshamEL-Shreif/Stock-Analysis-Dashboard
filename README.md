@@ -2,6 +2,10 @@
 
 A real-time interactive dashboard built with **Dash** and **Plotly** for visualizing financial metrics, forecasts, and volume predictions for major tech stocks using **Prophet** and machine learning models.
 
+## Demo
+
+![demo](demo.gif)
+
 ## 🚀 Features
 
 - 📊 **Interactive visualizations** for stock closing prices, volume, and returns.
@@ -67,7 +71,6 @@ python main.py
 - Tesla (TSLA)
 - Meta (META)
 
-## Demo
 
 
 
