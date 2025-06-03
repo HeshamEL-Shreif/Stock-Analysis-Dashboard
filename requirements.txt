@@ -1,0 +1,9 @@
+dash
+dash_bootstrap_components
+dash.dependencies
+plotly
+pandas
+yfinance
+sklearn
+numpy
+prophet
