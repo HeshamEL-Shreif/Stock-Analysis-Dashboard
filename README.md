@@ -6,6 +6,7 @@ A real-time interactive dashboard built with **Dash** and **Plotly** for visuali
 
 ![demo](demo.gif)
 
+
 ## 🚀 Features
 
 - 📊 **Interactive visualizations** for stock closing prices, volume, and returns.
