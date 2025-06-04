@@ -3,6 +3,7 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 import dash
 from dash import callback_context
+from UI.ui import color
 
 
 from UI.ui_components import get_header, ticker_dropdown, update_button, \
@@ -33,8 +34,8 @@ right_content = html.Div(
     )
 
 df, market_df, ticker = data[initial_ticker]
-closing_price = closing_price_plot(ticker)
-today_change_guage = get_today_change_guage(ticker)
+closing_price = closing_price_plot(ticker, initial_ticker)
+today_change_guage = get_today_change_guage(ticker, initial_ticker)
 volume_model = volume_models[initial_ticker]
 volume_plot = get_volume_plot(df, initial_ticker)
 volume_gauge = plot_predicted_volume_gauge(volume_model, df, initial_ticker)
@@ -44,11 +45,11 @@ cumulative_returns_gauge = plot_vs_index_gauge(combined, initial_ticker)
 prophet_model = prophet_models[initial_ticker]
 prophet_df = get_prophet_df(df, initial_ticker)
 forecast_data = forecast(prophet_model)
-forecast_gauge = get_forecast_gauge(prophet_df, forecast_data)
-forecast_plot = get_forecast_plot(forecast_data, prophet_df)
+forecast_gauge = get_forecast_gauge(initial_ticker, prophet_df, forecast_data)
+forecast_plot = get_forecast_plot(initial_ticker, forecast_data, prophet_df)
 row_1 = get_stock_plot(df, initial_ticker)
 revenue, net_income, profit_margin, fcf, eps, pe, dividend = get_financial_metrics(ticker)
-bar_row = get_numbers_bar(revenue, net_income, profit_margin, fcf, eps, pe, dividend)
+bar_row = get_numbers_bar(initial_ticker, revenue, net_income, profit_margin, fcf, eps, pe, dividend)
 
 row_2 = dbc.Row([
     dbc.Col([
@@ -94,7 +95,8 @@ app.layout = html.Div([
     [Output("header-section", "children"),
      Output("dashboard-content", "children"),
      Output('ticker-dropdown', 'options'),
-     Output('ticker-dropdown', 'value')],
+     Output('ticker-dropdown', 'value'),
+     Output('update-button', 'style')],
     [Input("ticker-dropdown", "value"),
      Input("update-button", "n_clicks")]
 )
@@ -113,8 +115,8 @@ def update_dashboard(ticker_string, n_clicks):
         
     df, market_df, ticker = data[ticker_string]
 
-    closing_price = closing_price_plot(ticker)
-    today_change_guage = get_today_change_guage(ticker)
+    closing_price = closing_price_plot(ticker, ticker_string)
+    today_change_guage = get_today_change_guage(ticker, ticker_string)
 
     volume_model = volume_models[ticker_string]
     volume_plot = get_volume_plot(df, ticker_string)
@@ -127,8 +129,8 @@ def update_dashboard(ticker_string, n_clicks):
     prophet_model = prophet_models[ticker_string]
     prophet_df = get_prophet_df(df, ticker_string)
     forecast_data = forecast(prophet_model)
-    forecast_gauge = get_forecast_gauge(prophet_df, forecast_data)
-    forecast_plot = get_forecast_plot(forecast_data, prophet_df)
+    forecast_gauge = get_forecast_gauge(ticker_string, prophet_df, forecast_data)
+    forecast_plot = get_forecast_plot(ticker_string, forecast_data, prophet_df)
 
     row_1 = get_stock_plot(df, ticker_string)
 
@@ -156,7 +158,7 @@ def update_dashboard(ticker_string, n_clicks):
     ])
     
     revenue, net_income, profit_margin, fcf, eps, pe, dividend = get_financial_metrics(ticker)
-    bar_row = get_numbers_bar(revenue, net_income, profit_margin, fcf, eps, pe, dividend)
+    bar_row = get_numbers_bar(ticker_string, revenue, net_income, profit_margin, fcf, eps, pe, dividend)
 
     dashboard = html.Div([bar_row, row_1, row_2])
     header = get_header(ticker_string)
@@ -170,7 +172,7 @@ def update_dashboard(ticker_string, n_clicks):
         {'label': 'Meta', 'value': 'META'},
     ]
 
-    return header, dashboard, new_options, ticker_string
+    return header, dashboard, new_options, ticker_string, {'background-color' : color[ticker_string][17], 'color':'white'}
 
 
 app.run(port=8080)

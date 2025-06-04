@@ -10,6 +10,7 @@ from plotly.subplots import make_subplots
 from sklearn.linear_model import LinearRegression
 import numpy as np
 from prophet import Prophet
+from UI.ui import color
 
 def get_header(ticker):
     logo = {
@@ -39,11 +40,12 @@ def get_header(ticker):
 
     return left_content
 
-def get_numbers_bar(revenue, net_income, profit_margin, fcf, eps, pe, dividend):
+def get_numbers_bar(ticker, revenue, net_income, profit_margin, fcf, eps, pe, dividend):
+    
     
     numbers_bar_style = {
     "fontSize": "24px",
-    "color": "grey",
+    "color": color[ticker][0],
     "margin": "0"
     }
     text_style = {
@@ -116,19 +118,19 @@ def get_stock_plot(df, ticker_string):
 
     fig.add_trace(go.Scatter(
         x=df['Date'], y=df[f'Open_{ticker_string}'], mode='lines', name='Open',
-        line=dict(color='skyblue'), visible=True
+        line=dict(color=color[ticker_string][1]), visible=True
     ))
     fig.add_trace(go.Scatter(
         x=df['Date'], y=df[f'Close_{ticker_string}'], mode='lines', name='Close',
-        line=dict(color='orange'), visible=False
+        line=dict(color=color[ticker_string][2]), visible=False
     ))
     fig.add_trace(go.Scatter(
         x=df['Date'], y=df[f'High_{ticker_string}'], mode='lines', name='High',
-        line=dict(color='green'), visible=False
+        line=dict(color=color[ticker_string][3]), visible=False
     ))
     fig.add_trace(go.Scatter(
         x=df['Date'], y=df[f'Low_{ticker_string}'], mode='lines', name='Low',
-        line=dict(color='red'), visible=False
+        line=dict(color=color[ticker_string][4]), visible=False
     ))
 
     def get_button(label, visibility, title, annotation_text):
@@ -222,25 +224,37 @@ def get_stock_plot(df, ticker_string):
     return row_1
 
 
-def get_forecast_plot(forecast_data, prophet_df):
+def get_forecast_plot(ticker_string, forecast_data, prophet_df):
 
     forecasted_only = forecast_data[forecast_data['ds'] > prophet_df['ds'].max()]
 
     forcast_fig = go.Figure()
+    
+    forcast_fig.add_traces([
+        go.Scatter(
+            x=forecasted_only['ds'], y=forecasted_only['yhat_upper'],
+            line=dict(width=0), showlegend=False
+        ),
+        go.Scatter(
+            x=forecasted_only['ds'], y=forecasted_only['yhat_lower'],
+            fill='tonexty', fillcolor=color[ticker_string][7],
+            line=dict(width=0), showlegend=False
+        )
+    ])
 
     forcast_fig.add_trace(go.Scatter(
         x=forecasted_only['ds'], y=forecasted_only['yhat'],
-        name='Forecast', line=dict(color='green')
+        name='Forecast', line=dict(color=color[ticker_string][5])
     ))
 
     forcast_fig.add_trace(go.Scatter(
         x=forecasted_only['ds'], y=forecasted_only['yhat_upper'],
-        name='Upper Bound', line=dict(dash='dot', color='gray')
+        name='Upper Bound', line=dict(dash='dot', color=color[ticker_string][6])
     ))
 
     forcast_fig.add_trace(go.Scatter(
         x=forecasted_only['ds'], y=forecasted_only['yhat_lower'],
-        name='Lower Bound', line=dict(dash='dot', color='gray')
+        name='Lower Bound', line=dict(dash='dot', color=color[ticker_string][6])
     ))
 
     forcast_fig.update_layout(
@@ -257,17 +271,7 @@ def get_forecast_plot(forecast_data, prophet_df):
             font=dict(size=10)
         ),
     )
-    forcast_fig.add_traces([
-        go.Scatter(
-            x=forecasted_only['ds'], y=forecasted_only['yhat_upper'],
-            line=dict(width=0), showlegend=False
-        ),
-        go.Scatter(
-            x=forecasted_only['ds'], y=forecasted_only['yhat_lower'],
-            fill='tonexty', fillcolor='rgba(0,100,80,0.2)',
-            line=dict(width=0), showlegend=False
-        )
-    ])
+
 
     forcast_fig.add_annotation(
         text=f"Forcasting",
@@ -283,7 +287,7 @@ def get_forecast_plot(forecast_data, prophet_df):
     plot = dcc.Graph(figure=forcast_fig)
     return plot
 
-def get_forecast_gauge(prophet_df, forecast_data):
+def get_forecast_gauge(ticker_string, prophet_df, forecast_data):
 
     last_actual_date = prophet_df['ds'].max()
     last_actual_price = prophet_df.loc[prophet_df['ds'] == last_actual_date, 'y'].values[0]
@@ -302,16 +306,16 @@ def get_forecast_gauge(prophet_df, forecast_data):
         value=percent_change,
         delta={
             "reference": 0,
-            "increasing": {"color": "green"},
-            "decreasing": {"color": "red"}
+            "increasing": {"color": color[ticker_string][8]},
+            "decreasing": {"color": color[ticker_string][9]}
         },
         gauge={
-            "axis": {"range": [-10, 10], "tickwidth": 1, "tickcolor": "darkgray"},
-            "bar": {"color": "blue"},
+            "axis": {"range": [-10, 10], "tickwidth": 1, "tickcolor": 'darkgrey'},
+            'bar': {'color': color[ticker_string][10]},
             "bgcolor": "white",
             "steps": [
-                {"range": [-10, 0], "color": "lightcoral"},
-                {"range": [0, 10], "color": "lightgreen"}
+                {"range": [-10, 0], "color":  color[ticker_string][11]},
+                {"range": [0, 10], "color":  color[ticker_string][12]}
             ],
             "threshold": {
                 "line": {"color": "black", "width": 4},
@@ -339,11 +343,18 @@ def get_forecast_gauge(prophet_df, forecast_data):
     return dcc.Graph(figure=fig)
 
 
+
 def plot_cumulative_returns(ticker_string, combined):
 
     combined.columns = [f'{ticker_string} Cumulative', 'S&P 500 Cumulative']
 
-    fig = px.line(combined)
+    df_melted = combined.reset_index().melt(id_vars='Date', var_name='Index', value_name='Cumulative Return')
+
+    custom_colors = [color[ticker_string][13], color[ticker_string][14]]  # Example: blue for ticker, orange for S&P 500
+
+    # Create the plot
+    fig = px.line(df_melted, x='Date', y='Cumulative Return', color='Index',
+                  color_discrete_sequence=custom_colors)
 
     fig.update_layout(
         yaxis_title=dict(text="Cumulative Return", font=dict(size=12)),
@@ -378,45 +389,6 @@ def plot_cumulative_returns(ticker_string, combined):
 
     return dcc.Graph(figure=fig)
 
-
-def plot_cumulative_returns(ticker_string, combined):
-
-    combined.columns = [f'{ticker_string} Cumulative', 'S&P 500 Cumulative']
-
-    fig = px.line(combined)
-
-    fig.update_layout(
-        yaxis_title=dict(text="Cumulative Return", font=dict(size=12)),
-        xaxis_title=dict(text="Date", font=dict(size=12)),
-        template="plotly_white",
-        margin=dict(l=10, r=50, t=50, b=10),
-        height=240,
-        legend=dict(
-            orientation='h',
-            x=0,
-            y=0.9,
-            traceorder='normal',
-            font=dict(size=10)
-        ),
-        xaxis=dict(
-            rangeslider=dict(
-                visible=True,
-                bgcolor='lightgrey',
-                thickness=0.05
-            )
-        )
-    )
-
-    fig.add_annotation(
-        text=f"{ticker_string} vs S&P 500 (Cumulative Return)",
-        xref="paper", yref="paper",
-        x=0.5, y=1.4,
-        showarrow=False,
-        font=dict(size=25),
-        xanchor='center'
-    )
-
-    return dcc.Graph(figure=fig)
 
 def plot_vs_index_gauge(combined, ticker_string):
 
@@ -432,16 +404,16 @@ def plot_vs_index_gauge(combined, ticker_string):
         value=percent_diff_vs_index,
         delta={
             "reference": 0,
-            "increasing": {"color": "green"},
-            "decreasing": {"color": "red"}
+            "increasing": {"color": color[ticker_string][8]},
+            "decreasing": {"color": color[ticker_string][9]}
         },
         gauge={
-            'axis': {'range': [-50, 50], 'tickwidth': 1, 'tickcolor': "darkgray"},
-            'bar': {'color': "blue"},
+            'axis': {'range': [-50, 50], 'tickwidth': 1, 'tickcolor': 'darkgrey'},
+            'bar': {'color': color[ticker_string][10]},
             'bgcolor': "white",
             'steps': [
-                {'range': [-50, 0], 'color': 'lightcoral'},
-                {'range': [0, 50], 'color': 'lightgreen'}
+                {'range': [-50, 0], 'color': color[ticker_string][11]},
+                {'range': [0, 50], 'color': color[ticker_string][12]}
             ],
             'threshold': {
                 'line': {'color': "black", 'width': 4},
@@ -471,7 +443,7 @@ def plot_vs_index_gauge(combined, ticker_string):
     return dcc.Graph(figure=fig)
 
 
-def closing_price_plot(ticker):
+def closing_price_plot(ticker, ticker_string):
     
     df = ticker.history(period="1d", interval="1m")
     hist = ticker.history(period="10d")
@@ -480,7 +452,7 @@ def closing_price_plot(ticker):
 
     hist = hist.reset_index()
 
-    pct_fig = px.line(hist, x='Date', y='Close')
+    pct_fig = px.line(hist, x='Date', y='Close', color_discrete_sequence=[color[ticker_string][15]])
 
     for i, row in hist.iterrows():
         if pd.notna(row['Percent Change']):
@@ -525,7 +497,7 @@ def closing_price_plot(ticker):
     
     return plot
 
-def get_today_change_guage(ticker):
+def get_today_change_guage(ticker, ticker_string):
     
     df = ticker.history(period="1d", interval="1m")
     if not df.empty and len(df) > 1:
@@ -539,14 +511,14 @@ def get_today_change_guage(ticker):
     gauge_fig = go.Figure(go.Indicator(
         mode="gauge+number+delta",
         value=percent_change_today,
-        delta={"reference": 0, "increasing": {"color": "green"}, "decreasing": {"color": "red"}},
+        delta={"reference": 0, "increasing": {"color": color[ticker_string][8]}, "decreasing": {"color": color[ticker_string][9]}},
         gauge={
-            'axis': {'range': [-5, 5], 'tickwidth': 1, 'tickcolor': "darkgray"},
-            'bar': {'color': "blue"},
+            'axis': {'range': [-5, 5], 'tickwidth': 1, 'tickcolor': 'darkgrey'},
+            'bar': {'color': color[ticker_string][10]},
             'bgcolor': "white",
             'steps': [
-                {'range': [-5, 0], 'color': 'lightcoral'},
-                {'range': [0, 5], 'color': 'lightgreen'}
+                {'range': [-5, 0], 'color': color[ticker_string][11]},
+                {'range': [0, 5], 'color': color[ticker_string][12]}
             ],
             'threshold': {
                 'line': {'color': "black", 'width': 4},
@@ -580,7 +552,7 @@ def get_today_change_guage(ticker):
 
 def get_volume_plot(df, ticker_string):
     
-    volume_fig = px.line(df, x='Date', y=f'Volume_{ticker_string}', template='plotly_white')
+    volume_fig = px.line(df, x='Date', y=f'Volume_{ticker_string}', template='plotly_white', color_discrete_sequence=[color[ticker_string][16]])
     volume_fig.update_layout(height=240, margin=dict(t=40, b=40, l=40, r=40))
 
 
@@ -611,16 +583,16 @@ def plot_predicted_volume_gauge(model, df, ticker_string):
         value=predicted_volume,
         delta={
             "reference": latest_volume,
-            "increasing": {"color": "green"},
-            "decreasing": {"color": "red"}
+            "increasing": {"color": color[ticker_string][8]},
+            "decreasing": {"color":color[ticker_string][9]}
         },
         gauge={
-            'axis': {'range': [0, max_volume], 'tickwidth': 1, 'tickcolor': "darkgray"},
-            'bar': {'color': "blue"},
+            'axis': {'range': [0, max_volume], 'tickwidth': 1, 'tickcolor':'darkgrey'},
+            'bar': {'color': color[ticker_string][10]},
             'bgcolor': "white",
             'steps': [
-                {'range': [0, max_volume * 0.5], 'color': 'lightcoral'},
-                {'range': [max_volume * 0.5, max_volume], 'color': 'lightgreen'}
+                {'range': [0, max_volume * 0.5], 'color': color[ticker_string][11]},
+                {'range': [max_volume * 0.5, max_volume], 'color': color[ticker_string][12]}
             ],
             'threshold': {
                 'line': {'color': "black", 'width': 4},
@@ -649,6 +621,8 @@ def plot_predicted_volume_gauge(model, df, ticker_string):
 
     return dcc.Graph(figure=fig)
 
+
+
 ticker_dropdown = dcc.Dropdown(
     id='ticker-dropdown',
     options=[
@@ -664,5 +638,5 @@ ticker_dropdown = dcc.Dropdown(
     style={'width': '200px'}
 )
 
-update_button = dbc.Button("Update", id="update-button", color="dark", className="ms-2")
+update_button = dbc.Button("Update", id="update-button", style={'background-color': "black", 'color': "white"}, className="ms-2")
 
