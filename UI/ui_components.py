@@ -375,6 +375,7 @@ def plot_cumulative_returns(ticker_string, combined):
                 bgcolor='lightgrey',
                 thickness=0.05
             )
+            
         )
     )
 
@@ -481,7 +482,11 @@ def closing_price_plot(ticker, ticker_string):
             y=0.9,
             traceorder='normal',
             font=dict(size=10)
-        ),
+        ),        xaxis=dict(
+            tickfont=dict(size=11),
+            showgrid=True, gridcolor='lightgrey',
+            rangeslider=dict(visible=True, bgcolor='lightgrey', thickness=0.05),
+        )
     )
 
     pct_fig.add_annotation(
@@ -564,6 +569,22 @@ def get_volume_plot(df, ticker_string):
         font=dict(size=25),
         xanchor='center'
     )
+    volume_fig.update_layout(xaxis=dict(
+            tickfont=dict(size=11),
+            showgrid=True, gridcolor='lightgrey',
+            rangeslider=dict(visible=True, bgcolor='lightgrey', thickness=0.05),
+            rangeselector=dict(
+                buttons=[
+                    dict(count=1, label="1m", step="month", stepmode="backward"),
+                    dict(count=6, label="6m", step="month", stepmode="backward"),
+                    dict(count=1, label="1y", step="year", stepmode="backward"),
+                    dict(step="all")
+                ],
+                x=0.1, xanchor="center",
+                y=1.2, yanchor="top",
+                font=dict(size=8)
+            )
+        ))
 
     plot_volume = dcc.Graph(figure=volume_fig)
     
